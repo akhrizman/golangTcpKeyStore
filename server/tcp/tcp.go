@@ -21,39 +21,44 @@ func EnableTcpServer() {
 
 	go service.Store.RequestMonitor()
 
+	service.ResponseStreams = map[int]chan service.Response{}
+
+	connectionId := 1
 	for {
 		fmt.Println("Waiting for Client connection")
 		connection, err := listener.Accept()
+		service.ResponseStreams[connectionId] = make(chan service.Response)
 		if err != nil {
 			fmt.Printf("connection error: %s", err.Error())
 			break
 		}
 		fmt.Println("Established Connection")
-		fmt.Println("Handling Client Request")
-		go handle(connection)
+		fmt.Println("===============Handling Client Request on Connection ", connectionId)
+		go handle(connection, connectionId)
+		connectionId++
 	}
 }
 
-func handle(connection net.Conn) {
+func handle(connection net.Conn, connectionId int) {
 	defer func() { _ = connection.Close() }()
-	defer fmt.Println("Closed Connection")
+	defer fmt.Println("Closed Connection ", connectionId)
 
 	go func() {
-		for response := range service.Store.ResponseChannel {
-			fmt.Printf("Sending Message to Client: [%s]\n", fmt.Sprint(response.ClientString()))
+		for response := range service.ResponseStreams[connectionId] {
+			fmt.Printf("Sending Message to Client over connection %d: [%s]\n", connectionId, fmt.Sprint(response.ClientString()))
 			connection.Write([]byte(fmt.Sprint(response.ClientString())))
 		}
 	}()
 
 	scanner := bufio.NewScanner(connection)
 	for scanner.Scan() {
-		fmt.Printf("\nReceived message from Client: [%s]\n", scanner.Text())
+		fmt.Printf("\nReceived message from Client over connection %d: [%s]\n", connectionId, scanner.Text())
 		command, _ := service.ParseCommand(scanner.Text())
 		if command.Valid() {
 			fmt.Println("Command is Valid")
 			service.Store.QueueRequest(command.ToRequest())
 		} else {
-			service.Store.ResponseChannel <- service.NewResponse("err", "", "")
+			service.ResponseStreams[connectionId] <- service.NewResponse("err", "", "", connectionId)
 		}
 	}
 }

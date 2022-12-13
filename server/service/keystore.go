@@ -9,23 +9,24 @@ var (
 	Store                  = NewKeyStore()
 	ErrKvStoreDoesNotExist = errors.New("key value store has not been initialized")
 	ErrKeyNotFound         = errors.New("key not found")
+	ResponseStreams        map[int]chan Response
 )
 
 type KeyStore struct {
-	keyStore        map[Key]Value
-	putChannel      chan Request
-	getChannel      chan Request
-	deleteChannel   chan Request
-	ResponseChannel chan Response
+	keyStore      map[Key]Value
+	putChannel    chan Request
+	getChannel    chan Request
+	deleteChannel chan Request
+	//ResponseChannel chan Response
 }
 
 func NewKeyStore() KeyStore {
 	return KeyStore{
-		keyStore:        map[Key]Value{},
-		putChannel:      make(chan Request),
-		getChannel:      make(chan Request),
-		deleteChannel:   make(chan Request),
-		ResponseChannel: make(chan Response),
+		keyStore:      map[Key]Value{},
+		putChannel:    make(chan Request),
+		getChannel:    make(chan Request),
+		deleteChannel: make(chan Request),
+		//ResponseChannel: make(chan Response),
 	}
 }
 
@@ -95,23 +96,23 @@ func (ks *KeyStore) RequestMonitor() {
 				fmt.Println(err)
 			} else {
 				fmt.Println("Put Response generated and passed to response channel: ", request)
-				ks.ResponseChannel <- NewResponse("ack", request.Key, request.Value)
+				ResponseStreams[request.ConnectionId] <- NewResponse("ack", request.Key, request.Value, request.ConnectionId)
 			}
 		case request := <-ks.getChannel:
 			fmt.Println("Received request from get channel: ", request)
 			value, err := ks.Read(request)
 			if err != nil {
 				fmt.Println(err)
-				ks.ResponseChannel <- NewResponse("nil", request.Key, request.Value)
+				ResponseStreams[request.ConnectionId] <- NewResponse("nil", request.Key, request.Value, request.ConnectionId)
 			} else {
 				fmt.Println("Get Response generated and passed to response channel: ", request)
-				ks.ResponseChannel <- NewResponse("val", request.Key, value)
+				ResponseStreams[request.ConnectionId] <- NewResponse("val", request.Key, value, request.ConnectionId)
 			}
 		case request := <-ks.deleteChannel:
 			fmt.Println("Received request from delete channel: ", request)
 			ks.Delete(request)
 			fmt.Println("Delete Response generated and passed to response channel: ", request)
-			ks.ResponseChannel <- NewResponse("ack", request.Key, request.Value)
+			ResponseStreams[request.ConnectionId] <- NewResponse("ack", request.Key, request.Value, request.ConnectionId)
 		}
 	}
 }

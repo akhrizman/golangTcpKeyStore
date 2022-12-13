@@ -9,16 +9,18 @@ type Key string
 type Value string
 
 type Request struct {
-	Task  string
-	Key   Key
-	Value Value
+	Task         string
+	Key          Key
+	Value        Value
+	ConnectionId int
 }
 
-func NewRequest(task, key, value string) Request {
+func NewRequest(task, key, value string, connectionId int) Request {
 	return Request{
-		Task:  task,
-		Key:   Key(key),
-		Value: Value(value),
+		Task:         task,
+		Key:          Key(key),
+		Value:        Value(value),
+		ConnectionId: connectionId,
 	}
 }
 
@@ -30,13 +32,15 @@ type Response struct {
 	acknowledgement string // val, del, ack, nil
 	key             string
 	value           string
+	ConnectionId    int
 }
 
-func NewResponse(acknowledgement string, key Key, value Value) Response {
+func NewResponse(acknowledgement string, key Key, value Value, connectionId int) Response {
 	return Response{
 		acknowledgement: acknowledgement,
 		key:             string(key),
 		value:           string(value),
+		ConnectionId:    connectionId,
 	}
 }
 
