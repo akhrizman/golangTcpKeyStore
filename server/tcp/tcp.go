@@ -10,6 +10,7 @@ import (
 func EnableTcpServer() {
 	fmt.Println("Starting TCP Key Store Server")
 	listener, err := net.Listen("tcp4", ":8000")
+	fmt.Println("Accessible at ", listener.Addr())
 
 	if err != nil {
 		fmt.Printf("connection failure: %s", err.Error())
@@ -35,22 +36,24 @@ func EnableTcpServer() {
 
 func handle(connection net.Conn) {
 	defer func() { _ = connection.Close() }()
+	defer fmt.Println("Closed Connection")
 
 	go func() {
-		response := <-service.Store.ResponseChannel
-		connection.Write([]byte(fmt.Sprint(response.ClientString(), "\n")))
+		for response := range service.Store.ResponseChannel {
+			fmt.Printf("Sending Message to Client: [%s]\n", fmt.Sprint(response.ClientString()))
+			connection.Write([]byte(fmt.Sprint(response.ClientString())))
+		}
 	}()
 
-	defer fmt.Println("Closed Connection")
 	scanner := bufio.NewScanner(connection)
 	for scanner.Scan() {
-		fmt.Println("Received message: ", scanner.Text())
+		fmt.Printf("\nReceived message from Client: [%s]\n", scanner.Text())
 		command, _ := service.ParseCommand(scanner.Text())
 		if command.Valid() {
 			fmt.Println("Command is Valid")
 			service.Store.QueueRequest(command.ToRequest())
 		} else {
-			service.Store.ResponseChannel <- service.NewResponse("nil", "", "")
+			service.Store.ResponseChannel <- service.NewResponse("err", "", "")
 		}
 	}
 }

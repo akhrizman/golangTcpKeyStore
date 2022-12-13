@@ -22,6 +22,10 @@ func NewRequest(task, key, value string) Request {
 	}
 }
 
+func (request *Request) String() string {
+	return fmt.Sprintf("%s[%s]<%s>", request.Task, request.Key, request.Value)
+}
+
 type Response struct {
 	acknowledgement string // val, del, ack, nil
 	key             string
@@ -34,6 +38,10 @@ func NewResponse(acknowledgement string, key Key, value Value) Response {
 		key:             string(key),
 		value:           string(value),
 	}
+}
+
+func (response *Response) String() string {
+	return fmt.Sprintf("%s[%s]<%s>", response.acknowledgement, response.key, response.value)
 }
 
 func (response *Response) ClientString() string {
