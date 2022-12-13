@@ -8,7 +8,9 @@ import (
 
 func main() {
 	fmt.Println("Starting Client")
-	message := "get12hello34world"
+	//message := "put15hello15worldeeeee"
+	message := "get15hello"
+	//message := "del15hello"
 	bytes := []byte(fmt.Sprint(message, "\n"))
 	fmt.Println("Connecting to TCP Key Store Server")
 	connection, err := net.Dial("tcp4", ":8000")
@@ -29,5 +31,4 @@ func main() {
 
 	fmt.Println("Received Response: ", string(bytes))
 	_ = connection.Close()
-
 }
