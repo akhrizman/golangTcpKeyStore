@@ -21,7 +21,7 @@ func EnableTcpServer() {
 
 	go service.Store.RequestMonitor()
 
-	service.ResponseStreams = map[int]chan service.Response{}
+	service.ResponseStreams = map[string]chan service.Response{}
 
 	connectionId := 1
 	for {
@@ -32,13 +32,13 @@ func EnableTcpServer() {
 			break
 		}
 		fmt.Println("Established Connection")
-		fmt.Println("===============Handling Client Request on Connection ", connectionId)
-		go handle(connection, connectionId)
+		fmt.Println("===============Handling Client Request on Connection ", connection.RemoteAddr())
+		go handle(connection, connection.RemoteAddr().String())
 		connectionId++
 	}
 }
 
-func handle(connection net.Conn, connectionId int) {
+func handle(connection net.Conn, connectionId string) {
 	defer func() { _ = connection.Close() }()
 	defer fmt.Println("Closed Connection ", connectionId)
 

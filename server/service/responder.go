@@ -12,10 +12,10 @@ type Request struct {
 	Task         string
 	Key          Key
 	Value        Value
-	ConnectionId int
+	ConnectionId string
 }
 
-func NewRequest(task, key, value string, connectionId int) Request {
+func NewRequest(task, key, value string, connectionId string) Request {
 	return Request{
 		Task:         task,
 		Key:          Key(key),
@@ -32,10 +32,10 @@ type Response struct {
 	acknowledgement string // val, del, ack, nil
 	key             string
 	value           string
-	ConnectionId    int
+	ConnectionId    string
 }
 
-func NewResponse(acknowledgement string, key Key, value Value, connectionId int) Response {
+func NewResponse(acknowledgement string, key Key, value Value, connectionId string) Response {
 	return Response{
 		acknowledgement: acknowledgement,
 		key:             string(key),

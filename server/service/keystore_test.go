@@ -22,9 +22,9 @@ func TestMain(m *testing.M) {
 
 func setup() {
 	ks = NewKeyStore()
-	putRequest = NewRequest("", "testKeyPut", "testValuePut", 1)
-	getRequest = NewRequest("", "testKeyGet", "testValueGet", 1)
-	deleteRequest = NewRequest("", "testKeyDel", "testValueDel", 1)
+	putRequest = NewRequest("", "testKeyPut", "testValuePut", "connection1")
+	getRequest = NewRequest("", "testKeyGet", "testValueGet", "connection1")
+	deleteRequest = NewRequest("", "testKeyDel", "testValueDel", "connection1")
 }
 
 func shutdown() {

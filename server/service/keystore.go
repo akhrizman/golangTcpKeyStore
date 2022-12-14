@@ -9,7 +9,7 @@ var (
 	Store                  = NewKeyStore()
 	ErrKvStoreDoesNotExist = errors.New("key value store has not been initialized")
 	ErrKeyNotFound         = errors.New("key not found")
-	ResponseStreams        map[int]chan Response
+	ResponseStreams        map[string]chan Response
 )
 
 type KeyStore struct {
