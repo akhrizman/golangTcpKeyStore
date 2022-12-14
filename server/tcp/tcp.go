@@ -38,22 +38,22 @@ func handle(connection net.Conn) {
 	defer func() { _ = connection.Close() }()
 	defer fmt.Println("Closed Connection")
 
-	go func() {
-		for response := range service.Store.ResponseChannel {
-			fmt.Printf("Sending Message to Client: [%s]\n", fmt.Sprint(response.ClientString()))
-			connection.Write([]byte(fmt.Sprint(response.ClientString())))
-		}
-	}()
-
 	scanner := bufio.NewScanner(connection)
 	for scanner.Scan() {
+		if connection == nil {
+			break
+		}
 		fmt.Printf("\nReceived message from Client: [%s]\n", scanner.Text())
 		command, _ := service.ParseCommand(scanner.Text())
 		if command.Valid() {
 			fmt.Println("Command is Valid")
-			service.Store.QueueRequest(command.ToRequest())
+			request := command.ToRequest()
+			service.Store.QueueRequest(request)
+			response := <-request.ResponseChannel
+			fmt.Printf("Sending Message to Client: [%s]\n", fmt.Sprint(response.ClientString()))
+			connection.Write([]byte(fmt.Sprint(response.ClientString())))
 		} else {
-			service.Store.ResponseChannel <- service.NewResponse("err", "", "")
+			connection.Write([]byte("err"))
 		}
 	}
 }

@@ -12,37 +12,35 @@ var (
 )
 
 type KeyStore struct {
-	keyStore        map[Key]Value
-	putChannel      chan Request
-	getChannel      chan Request
-	deleteChannel   chan Request
-	ResponseChannel chan Response
+	keyStore      map[Key]Value
+	putChannel    chan Request
+	getChannel    chan Request
+	deleteChannel chan Request
 }
 
 func NewKeyStore() KeyStore {
 	return KeyStore{
-		keyStore:        map[Key]Value{},
-		putChannel:      make(chan Request),
-		getChannel:      make(chan Request),
-		deleteChannel:   make(chan Request),
-		ResponseChannel: make(chan Response),
+		keyStore:      map[Key]Value{},
+		putChannel:    make(chan Request),
+		getChannel:    make(chan Request),
+		deleteChannel: make(chan Request),
 	}
 }
 
-func (ks *KeyStore) Put(request Request) {
-	fmt.Println("Sending Request to put channel: ", request)
-	ks.putChannel <- request
-}
-
-func (ks *KeyStore) Get(request Request) {
-	fmt.Println("Sending Request to get channel: ", request)
-	ks.getChannel <- request
-}
-
-func (ks *KeyStore) Del(request Request) {
-	fmt.Println("Sending Request to delete channel: ", request)
-	ks.deleteChannel <- request
-}
+//func (ks *KeyStore) Put(request Request) {
+//	fmt.Println("Sending Request to put channel: ", request)
+//	ks.putChannel <- request
+//}
+//
+//func (ks *KeyStore) Get(request Request) {
+//	fmt.Println("Sending Request to get channel: ", request)
+//	ks.getChannel <- request
+//}
+//
+//func (ks *KeyStore) Del(request Request) {
+//	fmt.Println("Sending Request to delete channel: ", request)
+//	ks.deleteChannel <- request
+//}
 
 func (ks *KeyStore) CreateOrUpdate(request Request) error {
 	if ks.isClosed() {
@@ -64,9 +62,6 @@ func (ks *KeyStore) Read(request Request) (Value, error) {
 }
 
 func (ks *KeyStore) Delete(request Request) {
-	//if ks.isClosed() {
-	//	return ErrKvStoreDoesNotExist
-	//}
 	delete(ks.keyStore, request.Key)
 }
 
@@ -77,11 +72,16 @@ func (ks *KeyStore) isClosed() bool {
 func (ks *KeyStore) QueueRequest(request Request) {
 	switch request.Task {
 	case "put":
-		ks.Put(request)
+		fmt.Println("Sending Request to put channel: ", request)
+		ks.putChannel <- request
 	case "get":
-		ks.Get(request)
+		fmt.Println("Sending Request to get channel: ", request)
+		ks.getChannel <- request
 	case "del":
-		ks.Del(request)
+		fmt.Println("Sending Request to delete channel: ", request)
+		ks.deleteChannel <- request
+	default:
+		request.ResponseChannel <- NewResponse("err", "", "")
 	}
 }
 
@@ -95,23 +95,23 @@ func (ks *KeyStore) RequestMonitor() {
 				fmt.Println(err)
 			} else {
 				fmt.Println("Put Response generated and passed to response channel: ", request)
-				ks.ResponseChannel <- NewResponse("ack", request.Key, request.Value)
+				request.ResponseChannel <- NewResponse("ack", request.Key, request.Value)
 			}
 		case request := <-ks.getChannel:
 			fmt.Println("Received request from get channel: ", request)
 			value, err := ks.Read(request)
 			if err != nil {
 				fmt.Println(err)
-				ks.ResponseChannel <- NewResponse("nil", request.Key, request.Value)
+				request.ResponseChannel <- NewResponse("nil", request.Key, request.Value)
 			} else {
 				fmt.Println("Get Response generated and passed to response channel: ", request)
-				ks.ResponseChannel <- NewResponse("val", request.Key, value)
+				request.ResponseChannel <- NewResponse("val", request.Key, value)
 			}
 		case request := <-ks.deleteChannel:
 			fmt.Println("Received request from delete channel: ", request)
 			ks.Delete(request)
 			fmt.Println("Delete Response generated and passed to response channel: ", request)
-			ks.ResponseChannel <- NewResponse("ack", request.Key, request.Value)
+			request.ResponseChannel <- NewResponse("ack", request.Key, request.Value)
 		}
 	}
 }

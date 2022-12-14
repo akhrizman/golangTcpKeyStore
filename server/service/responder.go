@@ -9,9 +9,10 @@ type Key string
 type Value string
 
 type Request struct {
-	Task  string
-	Key   Key
-	Value Value
+	Task            string
+	Key             Key
+	Value           Value
+	ResponseChannel chan Response
 }
 
 func NewRequest(task, key, value string) Request {

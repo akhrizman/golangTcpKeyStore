@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"strconv"
+	"strings"
 )
 
 var (
@@ -31,7 +32,7 @@ func ParseCommand(input string) (Command, error) {
 	if !ValidCommandLength(input) {
 		return Command{}, ErrInvalidStringLength
 	}
-	task := input[:3]
+	task := strings.ToLower(input[:3])
 	key, remainingSegment, errKey := extractArgument(input[3:])
 	if errKey != nil {
 		return Command{}, ErrParseCommand
@@ -52,17 +53,15 @@ func ValidCommandLength(input string) bool {
 
 func (command *Command) ToRequest() Request {
 	return Request{
-		Task:  command.Task,
-		Key:   Key(command.Key),
-		Value: Value(command.Value),
+		Task:            command.Task,
+		Key:             Key(command.Key),
+		Value:           Value(command.Value),
+		ResponseChannel: make(chan Response),
 	}
 }
 
 // Valid checks any additional command requirements unrelated to parsing
 func (command *Command) Valid() bool {
-	if !TaskAllowed(command.Task) {
-		return false
-	}
 	if command.Key == "" {
 		return false
 	}
@@ -70,10 +69,6 @@ func (command *Command) Valid() bool {
 		return false
 	}
 	return true
-}
-
-func TaskAllowed(task string) bool {
-	return task == "put" || task == "get" || task == "del"
 }
 
 // extractArgument accepts a string of format "[argSizeSize(0-9)][argSize(#)][argString][remainingString]"
