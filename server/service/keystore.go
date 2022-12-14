@@ -17,7 +17,6 @@ type KeyStore struct {
 	putChannel    chan Request
 	getChannel    chan Request
 	deleteChannel chan Request
-	//ResponseChannel chan Response
 }
 
 func NewKeyStore() KeyStore {
@@ -26,7 +25,6 @@ func NewKeyStore() KeyStore {
 		putChannel:    make(chan Request),
 		getChannel:    make(chan Request),
 		deleteChannel: make(chan Request),
-		//ResponseChannel: make(chan Response),
 	}
 }
 
@@ -65,9 +63,6 @@ func (ks *KeyStore) Read(request Request) (Value, error) {
 }
 
 func (ks *KeyStore) Delete(request Request) {
-	//if ks.isClosed() {
-	//	return ErrKvStoreDoesNotExist
-	//}
 	delete(ks.keyStore, request.Key)
 }
 
