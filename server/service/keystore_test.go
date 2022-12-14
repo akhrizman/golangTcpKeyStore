@@ -22,9 +22,9 @@ func TestMain(m *testing.M) {
 
 func setup() {
 	ks = NewKeyStore()
-	putRequest = NewRequest("", "testKeyPut", "testValuePut")
-	getRequest = NewRequest("", "testKeyGet", "testValueGet")
-	deleteRequest = NewRequest("", "testKeyDel", "testValueDel")
+	putRequest = NewRequest("", "testKeyPut", "testValuePut", 1)
+	getRequest = NewRequest("", "testKeyGet", "testValueGet", 1)
+	deleteRequest = NewRequest("", "testKeyDel", "testValueDel", 1)
 }
 
 func shutdown() {
@@ -32,7 +32,6 @@ func shutdown() {
 	close(ks.putChannel)
 	close(ks.getChannel)
 	close(ks.deleteChannel)
-	close(ks.ResponseChannel)
 }
 
 func TestKeyStore_CreateOrUpdate(t *testing.T) {
@@ -58,10 +57,7 @@ func TestKeyStore_Read(t *testing.T) {
 
 func TestKeyStore_Delete(t *testing.T) {
 	ks.keyStore[deleteRequest.Key] = deleteRequest.Value
-	err := ks.Delete(deleteRequest)
-	if err != nil {
-		t.Error("Key deletion failed")
-	}
+	ks.Delete(deleteRequest)
 	_, ok := ks.keyStore[deleteRequest.Key]
 	if ok {
 		t.Error("Key remains after deletion")
@@ -79,14 +75,6 @@ func TestPutWhenStoreClosed(t *testing.T) {
 func TestGetWhenStoreClosed(t *testing.T) {
 	ks.keyStore = nil
 	_, err := ks.Read(getRequest)
-	if err == nil {
-		t.Error("Expected store closed error")
-	}
-}
-
-func TestDeleteWhenStoreClosed(t *testing.T) {
-	ks.keyStore = nil
-	err := ks.Delete(deleteRequest)
 	if err == nil {
 		t.Error("Expected store closed error")
 	}

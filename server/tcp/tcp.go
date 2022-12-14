@@ -14,7 +14,7 @@ func EnableTcpServer() {
 
 	if err != nil {
 		fmt.Printf("connection failure: %s", err.Error())
-		//log.Fatalf("connection failure: %s", err.Error())
+		//logg.Fatalf("connection failure: %s", err.Error())
 	}
 
 	defer func() { _ = listener.Close() }()
@@ -27,7 +27,6 @@ func EnableTcpServer() {
 	for {
 		fmt.Println("Waiting for Client connection")
 		connection, err := listener.Accept()
-		service.ResponseStreams[connectionId] = make(chan service.Response)
 		if err != nil {
 			fmt.Printf("connection error: %s", err.Error())
 			break
@@ -43,6 +42,8 @@ func handle(connection net.Conn, connectionId int) {
 	defer func() { _ = connection.Close() }()
 	defer fmt.Println("Closed Connection ", connectionId)
 
+	service.ResponseStreams[connectionId] = make(chan service.Response)
+
 	go func() {
 		for response := range service.ResponseStreams[connectionId] {
 			fmt.Printf("Sending Message to Client over connection %d: [%s]\n", connectionId, fmt.Sprint(response.ClientString()))
@@ -56,7 +57,9 @@ func handle(connection net.Conn, connectionId int) {
 		command, _ := service.ParseCommand(scanner.Text())
 		if command.Valid() {
 			fmt.Println("Command is Valid")
-			service.Store.QueueRequest(command.ToRequest())
+			request := command.ToRequest()
+			request.ConnectionId = connectionId
+			service.Store.QueueRequest(request)
 		} else {
 			service.ResponseStreams[connectionId] <- service.NewResponse("err", "", "", connectionId)
 		}
