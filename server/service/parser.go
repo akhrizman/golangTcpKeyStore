@@ -14,16 +14,16 @@ var (
 
 // Command struct to hold task, key, value, and size descriptors
 type Command struct {
-	Task  string // i.e. put/get/delete
-	Key   string
-	Value string
+	task  string // i.e. put/get/delete
+	key   string
+	value string
 }
 
 func NewCommand(task, key, value string) Command {
 	return Command{
-		Task:  task,
-		Key:   key,
-		Value: value,
+		task:  task,
+		key:   key,
+		value: value,
 	}
 }
 
@@ -51,21 +51,21 @@ func ValidCommandLength(input string) bool {
 	return len(input) >= 6
 }
 
-func (command *Command) ToRequest() Request {
+func (command *Command) AsRequest() Request {
 	return Request{
-		Task:            command.Task,
-		Key:             Key(command.Key),
-		Value:           Value(command.Value),
+		Task:            command.task,
+		Key:             Key(command.key),
+		Value:           Value(command.value),
 		ResponseChannel: make(chan Response),
 	}
 }
 
 // Valid checks any additional command requirements unrelated to parsing
 func (command *Command) Valid() bool {
-	if command.Key == "" {
+	if command.key == "" {
 		return false
 	}
-	if command.Task == "put" && command.Value == "" {
+	if command.task == "put" && command.value == "" {
 		return false
 	}
 	return true

@@ -1,90 +1,62 @@
 package service
 
-import (
-	"errors"
-	"fmt"
-)
+import "fmt"
 
-var (
-	Store                  = NewKeyStore()
-	ErrKvStoreDoesNotExist = errors.New("key value store has not been initialized")
-	ErrKeyNotFound         = errors.New("key not found")
-)
+// Datasource interface
+type Datasource interface {
+	CreateOrUpdate(key Key, value Value) error
+	Read(key Key) (Value, error)
+	Delete(key Key) error
+	IsClosed() bool
+}
 
-type KeyStore struct {
-	keyStore      map[Key]Value
+type DataHandler struct {
+	store         Datasource
 	putChannel    chan Request
 	getChannel    chan Request
 	deleteChannel chan Request
 }
 
-func NewKeyStore() KeyStore {
-	return KeyStore{
-		keyStore:      map[Key]Value{},
+func NewDataHandler(datasource Datasource) DataHandler {
+	return DataHandler{
+		store:         datasource,
 		putChannel:    make(chan Request),
 		getChannel:    make(chan Request),
 		deleteChannel: make(chan Request),
 	}
 }
 
-func (ks *KeyStore) CreateOrUpdate(request Request) error {
-	if ks.isClosed() {
-		return ErrKvStoreDoesNotExist
-	}
-	ks.keyStore[request.Key] = request.Value
-	return nil
-}
-
-func (ks *KeyStore) Read(request Request) (Value, error) {
-	if ks.isClosed() {
-		return "", ErrKvStoreDoesNotExist
-	}
-	value, ok := ks.keyStore[request.Key]
-	if !ok {
-		return "", ErrKeyNotFound
-	}
-	return value, nil
-}
-
-func (ks *KeyStore) Delete(request Request) {
-	delete(ks.keyStore, request.Key)
-}
-
-func (ks *KeyStore) isClosed() bool {
-	return ks.keyStore == nil
-}
-
-func (ks *KeyStore) QueueRequest(request Request) {
+func (handler *DataHandler) QueueRequest(request Request) {
 	switch request.Task {
 	case "put":
 		fmt.Println("Sending Request to put channel: ", request)
-		ks.putChannel <- request
+		handler.putChannel <- request
 	case "get":
 		fmt.Println("Sending Request to get channel: ", request)
-		ks.getChannel <- request
+		handler.getChannel <- request
 	case "del":
 		fmt.Println("Sending Request to delete channel: ", request)
-		ks.deleteChannel <- request
+		handler.deleteChannel <- request
 	default:
 		request.ResponseChannel <- NewResponse("err", "", "")
 	}
 }
 
-func (ks *KeyStore) RequestMonitor() {
+func (handler *DataHandler) RequestMonitor() {
 	for {
 		select {
-		case request := <-ks.putChannel:
+		case request := <-handler.putChannel:
 			fmt.Println("Received request from put channel: ", request)
-			err := ks.CreateOrUpdate(request)
+			err := handler.store.CreateOrUpdate(request.Key, request.Value)
 			if err != nil {
 				fmt.Println(err)
 			} else {
 				fmt.Println("Put Response generated and passed to response channel: ", request)
 				request.ResponseChannel <- NewResponse("ack", request.Key, request.Value)
 			}
-		case request := <-ks.getChannel:
+		case request := <-handler.getChannel:
 			fmt.Println("Received request from get channel: ", request)
-			value, err := ks.Read(request)
+			value, err := handler.store.Read(request.Key)
 			if err != nil {
 				fmt.Println(err)
 				request.ResponseChannel <- NewResponse("nil", request.Key, request.Value)
@@ -92,9 +64,9 @@ func (ks *KeyStore) RequestMonitor() {
 				fmt.Println("Get Response generated and passed to response channel: ", request)
 				request.ResponseChannel <- NewResponse("val", request.Key, value)
 			}
-		case request := <-ks.deleteChannel:
+		case request := <-handler.deleteChannel:
 			fmt.Println("Received request from delete channel: ", request)
-			ks.Delete(request)
+			handler.store.Delete(request.Key)
 			fmt.Println("Delete Response generated and passed to response channel: ", request)
 			request.ResponseChannel <- NewResponse("ack", request.Key, request.Value)
 		}

@@ -1,8 +1,19 @@
 package main
 
-import "tcpstore/tcp"
+import (
+	"tcpstore/logg"
+	"tcpstore/persistence"
+	"tcpstore/tcp"
+)
 
 func main() {
-	// input: [put][1][3]<key>[2][12]<stored value>
-	tcp.EnableTcpServer()
+	logg.SetupLogging()
+	defer logg.CloseLogFiles()
+
+	// Create a datastore
+	ks := persistence.NewKeyStore()
+
+	// Setup Server and Request Handler
+	tcp.EnableTcpServer(&ks)
+
 }

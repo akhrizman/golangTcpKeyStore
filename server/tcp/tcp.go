@@ -7,8 +7,12 @@ import (
 	"tcpstore/service"
 )
 
-func EnableTcpServer() {
-	fmt.Println("Starting TCP Key Store Server")
+var dh service.DataHandler
+
+func EnableTcpServer(datasource service.Datasource) {
+	fmt.Println(&datasource)
+
+	fmt.Println("Starting TCP key Store Server")
 	listener, err := net.Listen("tcp4", ":8000")
 	fmt.Println("Accessible at ", listener.Addr())
 
@@ -19,7 +23,8 @@ func EnableTcpServer() {
 
 	defer func() { _ = listener.Close() }()
 
-	go service.Store.RequestMonitor()
+	dh = service.NewDataHandler(datasource)
+	go dh.RequestMonitor()
 
 	for {
 		fmt.Println("Waiting for Client connection")
@@ -47,8 +52,8 @@ func handle(connection net.Conn) {
 		command, _ := service.ParseCommand(scanner.Text())
 		if command.Valid() {
 			fmt.Println("Command is Valid")
-			request := command.ToRequest()
-			service.Store.QueueRequest(request)
+			request := command.AsRequest()
+			dh.QueueRequest(request)
 			response := <-request.ResponseChannel
 			fmt.Printf("Sending Message to Client: [%s]\n", fmt.Sprint(response.ClientString()))
 			connection.Write([]byte(fmt.Sprint(response.ClientString())))
