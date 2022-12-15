@@ -27,21 +27,6 @@ func NewKeyStore() KeyStore {
 	}
 }
 
-//func (ks *KeyStore) Put(request Request) {
-//	fmt.Println("Sending Request to put channel: ", request)
-//	ks.putChannel <- request
-//}
-//
-//func (ks *KeyStore) Get(request Request) {
-//	fmt.Println("Sending Request to get channel: ", request)
-//	ks.getChannel <- request
-//}
-//
-//func (ks *KeyStore) Del(request Request) {
-//	fmt.Println("Sending Request to delete channel: ", request)
-//	ks.deleteChannel <- request
-//}
-
 func (ks *KeyStore) CreateOrUpdate(request Request) error {
 	if ks.isClosed() {
 		return ErrKvStoreDoesNotExist
