@@ -25,12 +25,6 @@ func TestCommand_ToRequest(t *testing.T) {
 	}
 }
 
-//func TestTaskAllowed(t *testing.T) {
-//	if TaskAllowed("foo") == true {
-//		t.Error("Failed to check forbidden task")
-//	}
-//}
-
 func TestStringExtractor(t *testing.T) {
 	input := "13abc"
 	simplifiedString, remainingString, _ := extractArgument(input)
