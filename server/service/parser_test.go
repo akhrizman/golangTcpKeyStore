@@ -14,8 +14,8 @@ func TestValidCommandLength(t *testing.T) {
 func TestCommand_ToRequest(t *testing.T) {
 	command := NewCommand("get", "testKey", "testValue")
 	request := command.AsRequest()
-	if request.Task != "get" {
-		t.Error("expected task 'get', got", request.Task)
+	if request.Type != "get" {
+		t.Error("expected task 'get', got", request.Type)
 	}
 	if request.Key != "testKey" {
 		t.Error("expected task 'get', got", request.Key)
@@ -74,7 +74,7 @@ func TestStringExtractorArgSizeNotLongEnough(t *testing.T) {
 
 func TestParseCommand(t *testing.T) {
 	inputString := "put13key212stored value"
-	command, _ := ParseCommand(inputString)
+	command, _ := ParseMessage(inputString)
 	if command.task != "put" {
 		t.Error("error getting task expected 'put', got", command.task)
 	}

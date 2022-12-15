@@ -9,7 +9,7 @@ type Key string
 type Value string
 
 type Request struct {
-	Task            string
+	Type            string
 	Key             Key
 	Value           Value
 	ResponseChannel chan Response
@@ -17,14 +17,18 @@ type Request struct {
 
 func NewRequest(task, key, value string) Request {
 	return Request{
-		Task:  task,
+		Type:  task,
 		Key:   Key(key),
 		Value: Value(value),
 	}
 }
 
-func (request *Request) String() string {
-	return fmt.Sprintf("%s[%s]<%s>", request.Task, request.Key, request.Value)
+func (req *Request) String() string {
+	if req.Value == "" {
+		return fmt.Sprintf("%s[%s]", req.Type, req.Key)
+	} else {
+		return fmt.Sprintf("%s[%s]<%s>", req.Type, req.Key, req.Value)
+	}
 }
 
 type Response struct {
@@ -41,23 +45,23 @@ func NewResponse(acknowledgement string, key Key, value Value) Response {
 	}
 }
 
-func (response *Response) String() string {
-	return fmt.Sprintf("%s[%s]<%s>", response.acknowledgement, response.key, response.value)
+func (resp *Response) String() string {
+	return fmt.Sprintf("%s[%s]<%s>", resp.acknowledgement, resp.key, resp.value)
 }
 
-func (response *Response) ClientString() string {
-	switch response.acknowledgement {
+func (resp *Response) ClientString() string {
+	switch resp.acknowledgement {
 	case "val":
-		return fmt.Sprintf("val%d%d%s", response.getValueArgSizeSize(), response.getValueArgSize(), response.value)
+		return fmt.Sprintf("val%d%d%s", resp.getValueArgSizeSize(), resp.getValueArgSize(), resp.value)
 	default:
-		return response.acknowledgement
+		return resp.acknowledgement
 	}
 }
 
-func (response *Response) getValueArgSize() int {
-	return len(response.value)
+func (resp *Response) getValueArgSize() int {
+	return len(resp.value)
 }
 
-func (response *Response) getValueArgSizeSize() int {
-	return len(strconv.Itoa(len(response.value)))
+func (resp *Response) getValueArgSizeSize() int {
+	return len(strconv.Itoa(len(resp.value)))
 }

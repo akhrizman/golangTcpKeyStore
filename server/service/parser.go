@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -27,8 +28,8 @@ func NewCommand(task, key, value string) Command {
 	}
 }
 
-// ParseCommand returns a Command struct containing parsed task, key, value, and size descriptors
-func ParseCommand(input string) (Command, error) {
+// ParseMessage returns a Command struct containing parsed task, key, value, and size descriptors
+func ParseMessage(input string) (Command, error) {
 	if !ValidCommandLength(input) {
 		return Command{}, ErrInvalidStringLength
 	}
@@ -42,7 +43,6 @@ func ParseCommand(input string) (Command, error) {
 	if task == "put" && errValue != nil {
 		value = ""
 	}
-	// Unnecessary to set keyArgSizeSize and keyArgSize, but may be useful for debugging
 	return NewCommand(task, key, value), nil
 }
 
@@ -53,7 +53,7 @@ func ValidCommandLength(input string) bool {
 
 func (command *Command) AsRequest() Request {
 	return Request{
-		Task:            command.task,
+		Type:            command.task,
 		Key:             Key(command.key),
 		Value:           Value(command.value),
 		ResponseChannel: make(chan Response),
@@ -105,4 +105,12 @@ func extractArgument(input string) (string, string, error) {
 
 	remainingString := input[1+argSizeSize+argSize:]
 	return extractedString, remainingString, nil
+}
+
+func TrimMessage(message string) string {
+	if len(message) <= 30 {
+		return message
+	} else {
+		return fmt.Sprint(message[:30], "...")
+	}
 }

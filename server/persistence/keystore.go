@@ -11,13 +11,19 @@ var (
 )
 
 type KeyStore struct {
+	name     string
 	keyStore map[service.Key]service.Value
 }
 
 func NewKeyStore() KeyStore {
 	return KeyStore{
+		name:     "In-Memory Map",
 		keyStore: map[service.Key]service.Value{},
 	}
+}
+
+func (ks *KeyStore) Name() string {
+	return ks.name
 }
 
 func (ks *KeyStore) CreateOrUpdate(key service.Key, value service.Value) error {

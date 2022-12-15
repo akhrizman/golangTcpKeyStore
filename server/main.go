@@ -13,7 +13,6 @@ func main() {
 	// Create a datastore
 	ks := persistence.NewKeyStore()
 
-	// Setup Server and Request Handler
+	// Setup Server and Response Handler
 	tcp.EnableTcpServer(&ks)
-
 }

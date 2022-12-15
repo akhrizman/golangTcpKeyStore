@@ -1,7 +1,6 @@
 package persistence
 
 import (
-	"fmt"
 	"os"
 	"tcpstore/service"
 	"testing"
@@ -49,7 +48,7 @@ func TestKeyStore_Read(t *testing.T) {
 	if err != nil {
 		t.Error("Expected key, but key not found")
 	} else if value != getRequest.Value {
-		t.Error(fmt.Sprintf("Expected %s but got %s", getRequest.Value, value))
+		t.Errorf("Expected %s but got %s", getRequest.Value, value)
 	}
 }
 

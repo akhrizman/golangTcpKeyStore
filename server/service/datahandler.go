@@ -1,9 +1,22 @@
 package service
 
-import "fmt"
+import (
+	"tcpstore/logg"
+)
+
+const (
+	Ack = "ack"
+	Val = "val"
+	Nil = "nil"
+	Err = "err"
+	Put = "put"
+	Get = "get"
+	Del = "del"
+)
 
 // Datasource interface
 type Datasource interface {
+	Name() string
 	CreateOrUpdate(key Key, value Value) error
 	Read(key Key) (Value, error)
 	Delete(key Key) error
@@ -27,18 +40,15 @@ func NewDataHandler(datasource Datasource) DataHandler {
 }
 
 func (handler *DataHandler) QueueRequest(request Request) {
-	switch request.Task {
-	case "put":
-		fmt.Println("Sending Request to put channel: ", request)
+	switch request.Type {
+	case Put:
 		handler.putChannel <- request
-	case "get":
-		fmt.Println("Sending Request to get channel: ", request)
+	case Get:
 		handler.getChannel <- request
-	case "del":
-		fmt.Println("Sending Request to delete channel: ", request)
+	case Del:
 		handler.deleteChannel <- request
 	default:
-		request.ResponseChannel <- NewResponse("err", "", "")
+		request.ResponseChannel <- NewResponse(Err, "", "")
 	}
 }
 
@@ -46,29 +56,28 @@ func (handler *DataHandler) RequestMonitor() {
 	for {
 		select {
 		case request := <-handler.putChannel:
-			fmt.Println("Received request from put channel: ", request)
 			err := handler.store.CreateOrUpdate(request.Key, request.Value)
 			if err != nil {
-				fmt.Println(err)
+				logg.Error.Printf("For %s - %s", request.String(), err)
 			} else {
-				fmt.Println("Put Response generated and passed to response channel: ", request)
-				request.ResponseChannel <- NewResponse("ack", request.Key, request.Value)
+				request.ResponseChannel <- NewResponse(Ack, request.Key, request.Value)
 			}
 		case request := <-handler.getChannel:
-			fmt.Println("Received request from get channel: ", request)
 			value, err := handler.store.Read(request.Key)
 			if err != nil {
-				fmt.Println(err)
-				request.ResponseChannel <- NewResponse("nil", request.Key, request.Value)
+				logg.Error.Printf("For %s - %s", request.String(), err)
+				request.ResponseChannel <- NewResponse(Nil, request.Key, request.Value)
 			} else {
-				fmt.Println("Get Response generated and passed to response channel: ", request)
-				request.ResponseChannel <- NewResponse("val", request.Key, value)
+				request.ResponseChannel <- NewResponse(Val, request.Key, value)
 			}
 		case request := <-handler.deleteChannel:
-			fmt.Println("Received request from delete channel: ", request)
-			handler.store.Delete(request.Key)
-			fmt.Println("Delete Response generated and passed to response channel: ", request)
-			request.ResponseChannel <- NewResponse("ack", request.Key, request.Value)
+			err := handler.store.Delete(request.Key)
+			if err != nil {
+				logg.Error.Printf("For %s - %s", request.String(), err)
+				request.ResponseChannel <- NewResponse(Err, request.Key, request.Value)
+			} else {
+				request.ResponseChannel <- NewResponse(Ack, request.Key, request.Value)
+			}
 		}
 	}
 }
