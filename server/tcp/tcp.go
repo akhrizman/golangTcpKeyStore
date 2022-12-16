@@ -10,6 +10,7 @@ import (
 
 var dh service.DataHandler
 
+// EnableTcpServer Sets up a TCP listener and sets up a data handler with a provided datasource
 func EnableTcpServer(datasource service.Datasource) {
 	logg.Info.Println("Starting TCP Server")
 	listener, err := net.Listen("tcp4", ":8000")
@@ -47,12 +48,14 @@ func handle(connection net.Conn) {
 		if connection == nil {
 			break
 		}
+		if scanner.Text() == "bye" {
+			func() { _ = connection.Close() }()
+			break
+		}
 		command, _ := service.ParseMessage(scanner.Text())
 		if command.Valid() {
 			request := command.AsRequest()
 			response := dh.ProcessRequest(request)
-
-			//response := <-request.ResponseChannel // request.Response
 			logg.Response.Printf("Responded [%s] to Request [%s]", service.TrimMessage(response.ClientString()), service.TrimMessage(scanner.Text()))
 			_, err := connection.Write([]byte(fmt.Sprint(response.ClientString())))
 			if err != nil {

@@ -15,7 +15,7 @@ const (
 	Del = "del"
 )
 
-// Datasource interface
+// Datasource interface - can be implemented for different data stores, i.e. a database.
 type Datasource interface {
 	Name() string
 	CreateOrUpdate(key Key, value Value) error
@@ -54,6 +54,7 @@ func (handler *DataHandler) StoreName() string {
 	return handler.store.Name()
 }
 
+// ProcessRequest listens for requests and returns responses
 func (handler *DataHandler) ProcessRequest(request Request) Response {
 	rw := requestWrapper{request, make(chan Response)}
 
@@ -72,6 +73,7 @@ func (handler *DataHandler) ProcessRequest(request Request) Response {
 	}
 }
 
+// RequestMonitor listens for requests, updates the data handler's data store, and sends the response
 func (handler *DataHandler) RequestMonitor() {
 	for {
 		select {
