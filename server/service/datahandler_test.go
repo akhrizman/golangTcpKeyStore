@@ -36,9 +36,9 @@ func setup() {
 }
 
 func shutdown() {
-	//close(dataHandler.PutChannel)
-	//close(dataHandler.GetChannel)
-	//close(dataHandler.DeleteChannel)
+	close(dataHandler.PutChannel)
+	close(dataHandler.GetChannel)
+	close(dataHandler.DeleteChannel)
 }
 
 func TestNewDataHandler(t *testing.T) {
@@ -104,5 +104,17 @@ func TestDataHandler_ProcessRequestFailures(t *testing.T) {
 	//		t.Error("Expected to receive put request through channel")
 	//	}
 	//})
+}
 
+func TestDataHandler_StoreName(t *testing.T) {
+	if dataHandler.StoreName() != "In-Memory Map" {
+		t.Error("Keystore should be named 'In-Memory Map'")
+	}
+}
+
+func TestDataHandler_CloseStore(t *testing.T) {
+	dataHandler.CloseStore()
+	if !keyStore.IsClosed() {
+		t.Error("Keystore was not closed successfully")
+	}
 }

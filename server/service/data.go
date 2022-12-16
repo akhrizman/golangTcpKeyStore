@@ -20,7 +20,6 @@ func NewRequest(task, key, value string) Request {
 		Type:  task,
 		Key:   Key(key),
 		Value: Value(value),
-		//Response: Response{},
 	}
 }
 

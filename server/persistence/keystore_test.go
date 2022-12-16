@@ -98,3 +98,10 @@ func TestKeyStoreIsClosed(t *testing.T) {
 		t.Error("Expected true error got ", false)
 	}
 }
+
+func TestKeyStore_Close(t *testing.T) {
+	ks.Close()
+	if ks.keyStore != nil {
+		t.Error("Store was not closed")
+	}
+}
