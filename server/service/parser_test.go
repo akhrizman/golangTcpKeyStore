@@ -166,3 +166,11 @@ func TestTrimMessage(t *testing.T) {
 		}
 	})
 }
+
+// True TDD for Variable Length Stretch Goal
+func TestNewCommand_StoresVariableLengthArg(t *testing.T) {
+	expectedCommand := NewCommand("get", "someKey", "", 2)
+	if expectedCommand.VariableLength != 2 {
+		t.Error
+	}
+}
