@@ -47,6 +47,10 @@ func handle(connection net.Conn) {
 		if connection == nil {
 			break
 		}
+		if scanner.Text() == "bye" {
+			func() { _ = connection.Close() }()
+			break
+		}
 		command, _ := service.ParseMessage(scanner.Text())
 		if command.Valid() {
 			request := command.AsRequest()
