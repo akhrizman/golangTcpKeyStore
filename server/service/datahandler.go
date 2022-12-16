@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"tcpstore/logg"
 )
 
@@ -21,62 +22,83 @@ type Datasource interface {
 	Read(key Key) (Value, error)
 	Delete(key Key) error
 	IsClosed() bool
+	Close()
 }
 
 type DataHandler struct {
 	store         Datasource
-	PutChannel    chan Request
-	GetChannel    chan Request
-	DeleteChannel chan Request
+	PutChannel    chan requestWrapper
+	GetChannel    chan requestWrapper
+	DeleteChannel chan requestWrapper
 }
 
 func NewDataHandler(datasource Datasource) DataHandler {
 	return DataHandler{
 		store:         datasource,
-		PutChannel:    make(chan Request),
-		GetChannel:    make(chan Request),
-		DeleteChannel: make(chan Request),
+		PutChannel:    make(chan requestWrapper),
+		GetChannel:    make(chan requestWrapper),
+		DeleteChannel: make(chan requestWrapper),
 	}
 }
 
-func (handler *DataHandler) QueueRequest(request Request) {
+type requestWrapper struct {
+	request         Request
+	responseChannel chan Response
+}
+
+func (handler *DataHandler) CloseStore() {
+	handler.store.Close()
+}
+
+func (handler *DataHandler) StoreName() string {
+	return handler.store.Name()
+}
+
+func (handler *DataHandler) ProcessRequest(request Request) Response {
+	rw := requestWrapper{request, make(chan Response)}
+
 	switch request.Type {
 	case Put:
-		handler.PutChannel <- request
+		handler.PutChannel <- rw
+		return <-rw.responseChannel
 	case Get:
-		handler.GetChannel <- request
+		handler.GetChannel <- rw
+		return <-rw.responseChannel
 	case Del:
-		handler.DeleteChannel <- request
+		handler.DeleteChannel <- rw
+		return <-rw.responseChannel
 	default:
-		request.ResponseChannel <- NewResponse(Err, "", "")
+		return NewResponse(Err, "", "")
 	}
 }
 
 func (handler *DataHandler) RequestMonitor() {
 	for {
 		select {
-		case request := <-handler.PutChannel:
-			err := handler.store.CreateOrUpdate(request.Key, request.Value)
+		case req := <-handler.PutChannel:
+			err := handler.store.CreateOrUpdate(req.request.Key, req.request.Value)
 			if err != nil {
-				logg.Error.Printf("For %s - %s", request.String(), err)
+				logg.Error.Printf("For %s - %s", req.request.String(), err)
+				req.responseChannel <- NewResponse(Err, "", "")
 			} else {
-				request.ResponseChannel <- NewResponse(Ack, request.Key, request.Value)
+				req.responseChannel <- NewResponse(Ack, req.request.Key, req.request.Value)
 			}
-		case request := <-handler.GetChannel:
-			value, err := handler.store.Read(request.Key)
+		case req := <-handler.GetChannel:
+			value, err := handler.store.Read(req.request.Key)
 			if err != nil {
-				logg.Error.Printf("For %s - %s", request.String(), err)
-				request.ResponseChannel <- NewResponse(Nil, request.Key, request.Value)
+				fmt.Println(req)
+				logg.Error.Printf("For %s - %s", req.request.String(), err)
+				req.responseChannel <- NewResponse(Nil, req.request.Key, req.request.Value)
 			} else {
-				request.ResponseChannel <- NewResponse(Val, request.Key, value)
+				req.responseChannel <- NewResponse(Val, req.request.Key, value)
 			}
-		case request := <-handler.DeleteChannel:
-			err := handler.store.Delete(request.Key)
+		case req := <-handler.DeleteChannel:
+			err := handler.store.Delete(req.request.Key)
 			if err != nil {
-				logg.Error.Printf("For %s - %s", request.String(), err)
-				request.ResponseChannel <- NewResponse(Err, request.Key, request.Value)
+				logg.Error.Printf("For %s - %s", req.request.String(), err)
+				req.responseChannel <- NewResponse(Err, "", "")
 			} else {
-				request.ResponseChannel <- NewResponse(Ack, request.Key, request.Value)
+				req.responseChannel <- NewResponse(Ack, req.request.Key, req.request.Value)
 			}
 		}
 	}

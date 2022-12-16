@@ -9,10 +9,10 @@ type Key string
 type Value string
 
 type Request struct {
-	Type            string
-	Key             Key
-	Value           Value
-	ResponseChannel chan Response
+	Type     string
+	Key      Key
+	Value    Value
+	Response Response
 }
 
 func NewRequest(task, key, value string) Request {
@@ -20,6 +20,7 @@ func NewRequest(task, key, value string) Request {
 		Type:  task,
 		Key:   Key(key),
 		Value: Value(value),
+		//Response: Response{},
 	}
 }
 
@@ -32,32 +33,32 @@ func (req *Request) String() string {
 }
 
 type Response struct {
-	acknowledgement string // val, del, ack, nil
-	key             string
-	value           string
+	Acknowledgement string // val, del, ack, nil
+	Key             string
+	Value           string
 }
 
 func NewResponse(acknowledgement string, key Key, value Value) Response {
 	return Response{
-		acknowledgement: acknowledgement,
-		key:             string(key),
-		value:           string(value),
+		Acknowledgement: acknowledgement,
+		Key:             string(key),
+		Value:           string(value),
 	}
 }
 
 func (resp *Response) ClientString() string {
-	switch resp.acknowledgement {
+	switch resp.Acknowledgement {
 	case "val":
-		return fmt.Sprintf("val%d%d%s", resp.getValueArgSizeSize(), resp.getValueArgSize(), resp.value)
+		return fmt.Sprintf("val%d%d%s", resp.getValueArgSizeSize(), resp.getValueArgSize(), resp.Value)
 	default:
-		return resp.acknowledgement
+		return resp.Acknowledgement
 	}
 }
 
 func (resp *Response) getValueArgSize() int {
-	return len(resp.value)
+	return len(resp.Value)
 }
 
 func (resp *Response) getValueArgSizeSize() int {
-	return len(strconv.Itoa(len(resp.value)))
+	return len(strconv.Itoa(len(resp.Value)))
 }

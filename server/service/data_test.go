@@ -3,14 +3,14 @@ package service
 import "testing"
 
 func TestResponse_ToClientString(t *testing.T) {
-	t.Run("Request String with value", func(t *testing.T) {
+	t.Run("Request String with Value", func(t *testing.T) {
 		response := NewResponse("val", Key("testKey"), Value("veryLongValue"))
 		message := response.ClientString()
 		if message != "val213veryLongValue" {
 			t.Error("Expected message 'val213veryLongValue', got", message)
 		}
 	})
-	t.Run("Request String without value", func(t *testing.T) {
+	t.Run("Request String without Value", func(t *testing.T) {
 		response := NewResponse("ack", Key("testKey"), Value("veryLongValue"))
 		message := response.ClientString()
 		if message != "ack" {
@@ -27,13 +27,13 @@ func TestNewRequest(t *testing.T) {
 }
 
 func TestRequest_String(t *testing.T) {
-	t.Run("Request with value", func(t *testing.T) {
+	t.Run("Request with Value", func(t *testing.T) {
 		request := NewRequest("get", "someKey", "someValue")
 		if request.String() != "get[someKey]<someValue>" {
 			t.Error("Request string incorrectly generated")
 		}
 	})
-	t.Run("Request without value", func(t *testing.T) {
+	t.Run("Request without Value", func(t *testing.T) {
 		request := NewRequest("get", "someKey", "")
 		if request.String() != "get[someKey]" {
 			t.Error("New Request could not be instantiated")

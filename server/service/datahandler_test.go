@@ -1,7 +1,9 @@
 package service_test
 
 import (
+	"fmt"
 	"os"
+	"strings"
 	"tcpstore/persistence"
 	"tcpstore/service"
 	"testing"
@@ -26,16 +28,17 @@ func TestMain(m *testing.M) {
 func setup() {
 	keyStore = persistence.NewKeyStore()
 	dataHandler = service.NewDataHandler(&keyStore)
-	putRequest = service.NewRequest("put", "testKeyPut", "testValuePut")
-	getRequest = service.NewRequest("get", "testKeyGet", "testValueGet")
-	deleteRequest = service.NewRequest("del", "testKeyDel", "testValueDel")
-	badRequest = service.NewRequest("bad", "testKeyDel", "testValueDel")
+	go dataHandler.RequestMonitor()
+	putRequest = service.NewRequest("put", "testKey", "testValue")
+	getRequest = service.NewRequest("get", "testKey", "")
+	deleteRequest = service.NewRequest("del", "testKey", "")
+	badRequest = service.NewRequest("bad", "", "")
 }
 
 func shutdown() {
-	close(dataHandler.PutChannel)
-	close(dataHandler.GetChannel)
-	close(dataHandler.DeleteChannel)
+	//close(dataHandler.PutChannel)
+	//close(dataHandler.GetChannel)
+	//close(dataHandler.DeleteChannel)
 }
 
 func TestNewDataHandler(t *testing.T) {
@@ -44,37 +47,62 @@ func TestNewDataHandler(t *testing.T) {
 	}
 }
 
-func TestDataHandler_QueueRequest(t *testing.T) {
-	//t.Run("queue put request", func(t *testing.T) {
-	//	defer close(dataHandler.PutChannel)
-	//	dataHandler.QueueRequest(putRequest)
-	//	//request := <-dataHandler.PutChannel
-	//	response := <-putRequest.ResponseChannel
-	//	fmt.Println("I'm In the test code")
-	//	if !strings.Contains(response.ClientString(), "ack") {
-	//		t.Error("Expected to receive put request through channel")
+func TestDataHandler_ProcessRequest(t *testing.T) {
+	t.Run("queue put request", func(t *testing.T) {
+		response := dataHandler.ProcessRequest(putRequest)
+		if response.Acknowledgement != "ack" {
+			t.Error("Expected 'ack' response to put request")
+		}
+	})
+	t.Run("queue get request", func(t *testing.T) {
+		response := dataHandler.ProcessRequest(getRequest)
+		if response.Acknowledgement != "val" || response.Value != string(putRequest.Value) {
+			fmt.Println(response)
+			t.Error("Expected 'val' response to get request")
+		}
+	})
+	t.Run("queue delete request", func(t *testing.T) {
+		response := dataHandler.ProcessRequest(deleteRequest)
+		if response.Acknowledgement != "ack" {
+			t.Error("Expected 'ack' response to delete request")
+		}
+	})
+	t.Run("queue unknown request type", func(t *testing.T) {
+		response := dataHandler.ProcessRequest(badRequest)
+		if !strings.Contains(response.ClientString(), "err") {
+			t.Error("Expected to receive put request through channel")
+		}
+	})
+}
+
+func TestDataHandler_ProcessRequestFailures(t *testing.T) {
+	//log.SetOutput(ioutil.Discard)
+	//dataHandler.CloseStore()
+	//fmt.Println(dataHandler.StoreName())
+	//t.Run("queue put request and fail", func(t *testing.T) {
+	//	response := dataHandler.ProcessRequest(putRequest)
+	//	if response.Acknowledgement != "err" {
+	//		t.Error("Expected 'err' response to put request")
 	//	}
 	//})
 	//t.Run("queue get request", func(t *testing.T) {
-	//	dataHandler.QueueRequest(getRequest)
-	//	request := <-dataHandler.GetChannel
-	//	if request != getRequest {
-	//		t.Error("Expected to receive put request through channel")
+	//	response := dataHandler.ProcessRequest(getRequest)
+	//	if response.Acknowledgement != "val" || response.Value != string(putRequest.Value) {
+	//		fmt.Println(response)
+	//		t.Error("Expected 'val' response to get request")
 	//	}
 	//})
 	//t.Run("queue delete request", func(t *testing.T) {
-	//	dataHandler.QueueRequest(deleteRequest)
-	//	request := <-dataHandler.DeleteChannel
-	//	if request != deleteRequest {
-	//		t.Error("Expected to receive put request through channel")
+	//	response := dataHandler.ProcessRequest(deleteRequest)
+	//	if response.Acknowledgement != "ack" {
+	//		t.Error("Expected 'ack' response to delete request")
 	//	}
 	//})
 	//t.Run("queue unknown request type", func(t *testing.T) {
-	//	dataHandler.QueueRequest(badRequest)
-	//	response := <-badRequest.ResponseChannel
-	//	exampleResponse := service.NewResponse("", "", "")
-	//	if reflect.TypeOf(exampleResponse) == reflect.TypeOf(response) {
+	//	response := dataHandler.ProcessRequest(badRequest)
+	//	if !strings.Contains(response.ClientString(), "err") {
 	//		t.Error("Expected to receive put request through channel")
 	//	}
 	//})
+
 }

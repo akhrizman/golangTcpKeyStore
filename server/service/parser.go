@@ -18,7 +18,7 @@ var (
 	ErrInvalidStringLength = errors.New("invalid string length, may have been truncated")
 )
 
-// Command struct to hold task, key, value, and size descriptors
+// Command struct to hold task, Key, Value, and size descriptors
 type Command struct {
 	task  string // i.e. put/get/delete
 	key   string
@@ -33,7 +33,7 @@ func NewCommand(task, key, value string) Command {
 	}
 }
 
-// ParseMessage returns a Command struct containing parsed task, key, value, and size descriptors
+// ParseMessage returns a Command struct containing parsed task, Key, Value, and size descriptors
 func ParseMessage(input string) (Command, error) {
 	if !ValidCommandLength(input) {
 		return Command{}, ErrInvalidStringLength
@@ -55,10 +55,9 @@ func ValidCommandLength(input string) bool {
 
 func (command *Command) AsRequest() Request {
 	return Request{
-		Type:            command.task,
-		Key:             Key(command.key),
-		Value:           Value(command.value),
-		ResponseChannel: make(chan Response),
+		Type:  command.task,
+		Key:   Key(command.key),
+		Value: Value(command.value),
 	}
 }
 

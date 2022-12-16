@@ -50,8 +50,9 @@ func handle(connection net.Conn) {
 		command, _ := service.ParseMessage(scanner.Text())
 		if command.Valid() {
 			request := command.AsRequest()
-			dh.QueueRequest(request)
-			response := <-request.ResponseChannel
+			response := dh.ProcessRequest(request)
+
+			//response := <-request.ResponseChannel // request.Response
 			logg.Response.Printf("Responded [%s] to Request [%s]", service.TrimMessage(response.ClientString()), service.TrimMessage(scanner.Text()))
 			_, err := connection.Write([]byte(fmt.Sprint(response.ClientString())))
 			if err != nil {

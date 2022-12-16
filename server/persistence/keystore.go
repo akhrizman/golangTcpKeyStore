@@ -56,3 +56,7 @@ func (ks *KeyStore) Delete(key service.Key) error {
 func (ks *KeyStore) IsClosed() bool {
 	return ks.keyStore == nil
 }
+
+func (ks *KeyStore) Close() {
+	ks.keyStore = nil
+}
