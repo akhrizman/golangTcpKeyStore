@@ -25,28 +25,28 @@ type Datasource interface {
 
 type DataHandler struct {
 	store         Datasource
-	putChannel    chan Request
-	getChannel    chan Request
-	deleteChannel chan Request
+	PutChannel    chan Request
+	GetChannel    chan Request
+	DeleteChannel chan Request
 }
 
 func NewDataHandler(datasource Datasource) DataHandler {
 	return DataHandler{
 		store:         datasource,
-		putChannel:    make(chan Request),
-		getChannel:    make(chan Request),
-		deleteChannel: make(chan Request),
+		PutChannel:    make(chan Request),
+		GetChannel:    make(chan Request),
+		DeleteChannel: make(chan Request),
 	}
 }
 
 func (handler *DataHandler) QueueRequest(request Request) {
 	switch request.Type {
 	case Put:
-		handler.putChannel <- request
+		handler.PutChannel <- request
 	case Get:
-		handler.getChannel <- request
+		handler.GetChannel <- request
 	case Del:
-		handler.deleteChannel <- request
+		handler.DeleteChannel <- request
 	default:
 		request.ResponseChannel <- NewResponse(Err, "", "")
 	}
@@ -55,14 +55,14 @@ func (handler *DataHandler) QueueRequest(request Request) {
 func (handler *DataHandler) RequestMonitor() {
 	for {
 		select {
-		case request := <-handler.putChannel:
+		case request := <-handler.PutChannel:
 			err := handler.store.CreateOrUpdate(request.Key, request.Value)
 			if err != nil {
 				logg.Error.Printf("For %s - %s", request.String(), err)
 			} else {
 				request.ResponseChannel <- NewResponse(Ack, request.Key, request.Value)
 			}
-		case request := <-handler.getChannel:
+		case request := <-handler.GetChannel:
 			value, err := handler.store.Read(request.Key)
 			if err != nil {
 				logg.Error.Printf("For %s - %s", request.String(), err)
@@ -70,7 +70,7 @@ func (handler *DataHandler) RequestMonitor() {
 			} else {
 				request.ResponseChannel <- NewResponse(Val, request.Key, value)
 			}
-		case request := <-handler.deleteChannel:
+		case request := <-handler.DeleteChannel:
 			err := handler.store.Delete(request.Key)
 			if err != nil {
 				logg.Error.Printf("For %s - %s", request.String(), err)

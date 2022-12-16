@@ -7,6 +7,11 @@ import (
 	"strings"
 )
 
+const (
+	MaximumLengthForLoggingCommand = 30
+	MinimumLengthForValidCommand   = 6
+)
+
 var (
 	ErrParseCommand        = errors.New("failed to parse input string")
 	ErrParseNumberOfBytes  = errors.New("unable to parse number of bytes")
@@ -34,21 +39,18 @@ func ParseMessage(input string) (Command, error) {
 		return Command{}, ErrInvalidStringLength
 	}
 	task := strings.ToLower(input[:3])
-	key, remainingSegment, errKey := extractArgument(input[3:])
+	key, remainingSegment, errKey := ExtractArgument(input[3:])
 	if errKey != nil {
 		return Command{}, ErrParseCommand
 	}
 
-	value, _, errValue := extractArgument(remainingSegment)
-	if task == "put" && errValue != nil {
-		value = ""
-	}
+	value, _, _ := ExtractArgument(remainingSegment)
 	return NewCommand(task, key, value), nil
 }
 
 // ValidCommandLength checks that input meets is of minimum length - example: "put11a"
 func ValidCommandLength(input string) bool {
-	return len(input) >= 6
+	return len(input) >= MinimumLengthForValidCommand
 }
 
 func (command *Command) AsRequest() Request {
@@ -71,11 +73,11 @@ func (command *Command) Valid() bool {
 	return true
 }
 
-// extractArgument accepts a string of format "[argSizeSize(0-9)][argSize(#)][argString][remainingString]"
+// ExtractArgument accepts a string of format "[argSizeSize(0-9)][argSize(#)][argString][remainingString]"
 // and returns the validated string the remaining substring
 // argString's size MUST equal it's preceding argSize descriptor
 // argSize's size MUST equal it's preceding argSizeSize descriptor
-func extractArgument(input string) (string, string, error) {
+func ExtractArgument(input string) (string, string, error) {
 	if input == "" {
 		return "", "", nil
 	}
@@ -99,16 +101,13 @@ func extractArgument(input string) (string, string, error) {
 	}
 
 	extractedString := input[1+argSizeSize : 1+argSizeSize+argSize]
-	if len(extractedString) != argSize {
-		return "", "", ErrInvalidStringLength
-	}
 
 	remainingString := input[1+argSizeSize+argSize:]
 	return extractedString, remainingString, nil
 }
 
 func TrimMessage(message string) string {
-	if len(message) <= 30 {
+	if len(message) <= MaximumLengthForLoggingCommand {
 		return message
 	} else {
 		return fmt.Sprint(message[:30], "...")

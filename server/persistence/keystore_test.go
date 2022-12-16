@@ -27,6 +27,12 @@ func setup() {
 	deleteRequest = service.NewRequest("", "testKeyDel", "testValueDel")
 }
 
+func TestKeyStore_Name(t *testing.T) {
+	if ks.Name() != "In-Memory Map" {
+		t.Error("Keystore should be named 'In-Memory Map'")
+	}
+}
+
 func shutdown() {
 	ks.keyStore = nil
 }
@@ -36,20 +42,23 @@ func TestKeyStore_CreateOrUpdate(t *testing.T) {
 	if err != nil {
 		t.Error("Could not insert value into key store")
 	}
-	value, ok := ks.keyStore[putRequest.Key]
-	if !ok || value != putRequest.Value {
-		t.Error("value was not stored")
-	}
 }
 
 func TestKeyStore_Read(t *testing.T) {
 	ks.keyStore[getRequest.Key] = getRequest.Value
-	value, err := ks.Read(getRequest.Key)
-	if err != nil {
-		t.Error("Expected key, but key not found")
-	} else if value != getRequest.Value {
-		t.Errorf("Expected %s but got %s", getRequest.Value, value)
-	}
+	t.Run("Key exists", func(t *testing.T) {
+		value, _ := ks.Read(getRequest.Key)
+		if value != getRequest.Value {
+			t.Errorf("Expected %s but got %s", getRequest.Value, value)
+		}
+	})
+	t.Run("Key missing", func(t *testing.T) {
+		value, err := ks.Read("ThisKeyDoesn'tExist")
+		if err == nil || value != "" {
+			t.Error("Expected key not found error")
+		}
+	})
+
 }
 
 func TestKeyStore_Delete(t *testing.T) {
@@ -58,34 +67,28 @@ func TestKeyStore_Delete(t *testing.T) {
 	if err != nil {
 		t.Error("key deletion failed")
 	}
-	_, ok := ks.keyStore[deleteRequest.Key]
-	if ok {
-		t.Error("key remains after deletion")
-	}
 }
 
-func TestPutWhenStoreClosed(t *testing.T) {
+func TestKeyStore_CrudMethodsWhenStoreClosed(t *testing.T) {
 	ks.keyStore = nil
-	err := ks.CreateOrUpdate(putRequest.Key, putRequest.Value)
-	if err == nil {
-		t.Error("Expected store closed error")
-	}
-}
-
-func TestGetWhenStoreClosed(t *testing.T) {
-	ks.keyStore = nil
-	_, err := ks.Read(getRequest.Key)
-	if err == nil {
-		t.Error("Expected store closed error")
-	}
-}
-
-func TestDeleteWhenStoreClosed(t *testing.T) {
-	ks.keyStore = nil
-	err := ks.Delete(deleteRequest.Key)
-	if err == nil {
-		t.Error("Expected store closed error")
-	}
+	t.Run("CreateOrUpdate", func(t *testing.T) {
+		err := ks.CreateOrUpdate(putRequest.Key, putRequest.Value)
+		if err == nil {
+			t.Error("Expected store closed error")
+		}
+	})
+	t.Run("Read", func(t *testing.T) {
+		_, err := ks.Read(getRequest.Key)
+		if err == nil {
+			t.Error("Expected store closed error")
+		}
+	})
+	t.Run("Delete", func(t *testing.T) {
+		err := ks.Delete(deleteRequest.Key)
+		if err == nil {
+			t.Error("Expected store closed error")
+		}
+	})
 }
 
 func TestKeyStoreIsClosed(t *testing.T) {

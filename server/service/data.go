@@ -45,10 +45,6 @@ func NewResponse(acknowledgement string, key Key, value Value) Response {
 	}
 }
 
-func (resp *Response) String() string {
-	return fmt.Sprintf("%s[%s]<%s>", resp.acknowledgement, resp.key, resp.value)
-}
-
 func (resp *Response) ClientString() string {
 	switch resp.acknowledgement {
 	case "val":
